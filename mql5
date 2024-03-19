@@ -1,0 +1,72 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                Miliarto.mq5 |
+//|                        https://forexroboteasy.com                       |
+//|                               Forex Robot Easy Team               |
+//+------------------------------------------------------------------+
+#property copyright 'Forex Robot Easy Team'
+#property link      'https://forexroboteasy.com'
+#property version   '1.00'
+#property strict
+
+// Input parameters
+input ENUM_MA_METHOD MA_Method=MODE_SMA; // Moving Average method
+input int MA_Period=14; // Moving Average period
+input double MA_Price=PRICE_CLOSE; // Moving Average applied price
+input int BB_Period=20; // Bollinger Bands period
+input double BB_Deviation=2.0; // Bollinger Bands deviation
+input int TP_in_Pips=50; // Take Profit in pips
+input int SL_in_Pips=25; // Stop Loss in pips
+input bool Use_Martingale=true; // Enable Martingale setup
+
+// Global variables
+double Lots=0.01; // Initial lot size
+double Martingale_Factor=2.0; // Martingale factor
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Initialize necessary variables and indicators
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   // Perform necessary cleanup
+}
+
+//+------------------------------------------------------------------+
+//| Expert start function                                            |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Perform trading logic based on selected indicator
+   double ma_value=iMA(Symbol(),0,MA_Period,0,MA_Method,MA_Price,0);
+   double upper_band, lower_band;
+   iBands(Symbol(),0,BB_Period,BB_Deviation,0,0,upper_band,lower_band);
+   
+   // Check for buy signal
+   if(Close[1]<ma_value && Close[0]>ma_value && Close[0]>lower_band)
+   {
+      double sl=NormalizeDouble(Close[0]-SL_in_Pips*Point,Digits);
+      double tp=NormalizeDouble(Close[0]+TP_in_Pips*Point,Digits);
+      OrderSend(Symbol(),OP_BUY,Lots,Close[0],3,sl,tp,'Buy order',0,0,CLR_NONE);
+      if(Use_Martingale) Lots*=Martingale_Factor; // Increase lot size for Martingale
+   }
+   
+   // Check for sell signal
+   if(Close[1]>ma_value && Close[0]<ma_value && Close[0]<upper_band)
+   {
+      double sl=NormalizeDouble(Close[0]+SL_in_Pips*Point,Digits);
+      double tp=NormalizeDouble(Close[0]-TP_in_Pips*Point,Digits);
+      OrderSend(Symbol(),OP_SELL,Lots,Close[0],3,sl,tp,'Sell order',0,0,CLR_NONE);
+      if(Use_Martingale) Lots*=Martingale_Factor; // Increase lot size for Martingale
+   }
+}
+
+//+------------------------------------------------------------------+
